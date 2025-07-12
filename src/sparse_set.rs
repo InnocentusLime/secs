@@ -121,7 +121,7 @@ impl SparseSets {
                 component.push_str(", ");
             }
         }
-        return component;
+        component
     }
 
     #[track_caller]

@@ -4,10 +4,7 @@ use std::{
     num::NonZeroU64,
 };
 
-use crate::{
-    query::Query,
-    sparse_set::SparseSets,
-};
+use crate::{query::Query, sparse_set::SparseSets};
 
 /// An opaque id for an entity.
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
