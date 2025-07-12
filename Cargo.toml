@@ -12,9 +12,6 @@ categories = ["game-engines", "game-development"]
 [dependencies]
 elsa = "1.11.0"
 
-[features]
-track_dead_entities = []
-
 [dev-dependencies]
 macroquad = "0.4.14"
 ui_test = "0.29.1"

@@ -52,18 +52,6 @@ fn spawn_related_in_query() {
 }
 
 #[test]
-#[should_panic(expected = "Attaching `alloc::string::String` to despawned entity")]
-#[cfg(any(debug_assertions, feature = "track_dead_entities"))]
-fn attach_to_despawned() {
-    let world = World::default();
-
-    let entity = world.spawn((1_u32,));
-    world.despawn(entity);
-    world.flush_despawned();
-    world.attach(entity, (String::new(),));
-}
-
-#[test]
 fn attach_to_despawned_no_flush() {
     let world = World::default();
 

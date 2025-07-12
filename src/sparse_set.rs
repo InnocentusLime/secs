@@ -107,7 +107,6 @@ impl SparseSets {
 
     #[track_caller]
     pub fn debug(&self, entity: Entity) -> String {
-        #[cfg(any(debug_assertions, feature = "track_dead_entities"))]
         let mut component = String::new();
 
         for set in self.sets.iter() {
@@ -117,18 +116,12 @@ impl SparseSets {
                 )
             };
 
-            #[cfg(any(debug_assertions, feature = "track_dead_entities"))]
             if let Some(c) = guard.debug(entity) {
                 component.push_str(c);
                 component.push_str(", ");
             }
-            #[cfg(not(any(debug_assertions, feature = "track_dead_entities")))]
-            guard.remove(entity);
         }
-        #[cfg(any(debug_assertions, feature = "track_dead_entities"))]
         return component;
-        #[cfg(not(any(debug_assertions, feature = "track_dead_entities")))]
-        return String::new();
     }
 
     #[track_caller]

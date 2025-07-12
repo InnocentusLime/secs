@@ -1,9 +1,3 @@
-#[cfg(any(debug_assertions, feature = "track_dead_entities"))]
-use std::any::type_name;
-#[cfg(any(debug_assertions, feature = "track_dead_entities"))]
-use std::collections::BTreeMap;
-#[cfg(any(debug_assertions, feature = "track_dead_entities"))]
-use std::panic::Location;
 use std::{
     any::Any,
     cell::{Cell, Ref, RefCell, RefMut},
@@ -54,10 +48,6 @@ impl Default for EntityCounter {
 #[derive(Default)]
 pub struct World {
     entities: EntityCounter,
-    #[cfg(any(debug_assertions, feature = "track_dead_entities"))]
-    dead_entity_locations: RefCell<BTreeMap<Entity, &'static Location<'static>>>,
-    #[cfg(any(debug_assertions, feature = "track_dead_entities"))]
-    dead_entity_components: RefCell<BTreeMap<Entity, String>>,
     /// Entities that are being despawned.
     /// As we cannot mutate the sparse sets to remove all components while queries are running, we instead do
     /// so whenever a system finishes
@@ -68,14 +58,6 @@ pub struct World {
 impl World {
     #[track_caller]
     fn insert<C: Any>(&self, entity: Entity, component: C) {
-        #[cfg(any(debug_assertions, feature = "track_dead_entities"))]
-        if let Some(components) = self.dead_entity_components.borrow().get(&entity) {
-            let loc = self.dead_entity_locations.borrow()[&entity];
-            panic!(
-                "Attaching `{}` to despawned entity (despawned at {loc}).Components at despawn time: {components}",
-                type_name::<C>(),
-            );
-        }
         if let Some(mut set) = self.sparse_sets.get_mut::<C>() {
             set.insert(entity, component);
         } else {
@@ -100,23 +82,13 @@ impl World {
     #[track_caller]
     pub fn despawn(&self, entity: Entity) {
         self.despawning.borrow_mut().push(entity);
-        #[cfg(any(debug_assertions, feature = "track_dead_entities"))]
-        self.dead_entity_locations
-            .borrow_mut()
-            .insert(entity, Location::caller());
     }
 
     /// Ensure all despawned entities actually got removed
     #[track_caller]
     pub fn flush_despawned(&self) {
         for entity in self.despawning.borrow_mut().drain(..) {
-            #[cfg(any(debug_assertions, feature = "track_dead_entities"))]
-            let components = self.debug_components(entity);
             self.detach_all(entity);
-            #[cfg(any(debug_assertions, feature = "track_dead_entities"))]
-            self.dead_entity_components
-                .borrow_mut()
-                .insert(entity, components);
         }
     }
 
@@ -133,14 +105,6 @@ impl World {
     /// Detach a component and return it if the entity had that component.
     #[track_caller]
     pub fn detach<C: 'static>(&self, entity: Entity) -> Option<C> {
-        #[cfg(any(debug_assertions, feature = "track_dead_entities"))]
-        if let Some(components) = self.dead_entity_components.borrow().get(&entity) {
-            let loc = self.dead_entity_locations.borrow()[&entity];
-            panic!(
-                "Detaching `{}` from despawned entity (despawned at {loc})\nComponents at despawn time: {components}",
-                type_name::<C>(),
-            );
-        }
         let mut set = self.sparse_sets.get_mut::<C>()?;
         set.remove(entity)
     }
@@ -149,13 +113,6 @@ impl World {
     /// If you want to extract specific components, call [Self::detach] first.
     #[track_caller]
     pub fn detach_all(&self, entity: Entity) {
-        #[cfg(any(debug_assertions, feature = "track_dead_entities"))]
-        if let Some(components) = self.dead_entity_components.borrow().get(&entity) {
-            let loc = self.dead_entity_locations.borrow()[&entity];
-            panic!(
-                "Detaching all components from despawned entity (despawned at {loc})\nComponents at despawn time: {components}"
-            );
-        }
         self.sparse_sets.remove(entity)
     }
 
@@ -200,14 +157,6 @@ impl World {
     /// This will panic if the component is already used mutably either by a [Self::query] or [Self::get_mut].
     #[track_caller]
     pub fn get<C: 'static>(&self, entity: Entity) -> Option<Ref<C>> {
-        #[cfg(any(debug_assertions, feature = "track_dead_entities"))]
-        if let Some(components) = self.dead_entity_components.borrow().get(&entity) {
-            let loc = self.dead_entity_locations.borrow()[&entity];
-            panic!(
-                "Getting `{}` from despawned entity (despawned at {loc})\nComponents at despawn time: {components}",
-                type_name::<C>(),
-            );
-        }
         let set = self.sparse_sets.get::<C>()?;
         Ref::filter_map(set, |set| set.get(entity)).ok()
     }
@@ -219,14 +168,6 @@ impl World {
     /// This will panic if the component is already used either by a [Self::query], [Self::get_mut], or [Self::get].
     #[track_caller]
     pub fn get_mut<C: 'static>(&self, entity: Entity) -> Option<RefMut<C>> {
-        #[cfg(any(debug_assertions, feature = "track_dead_entities"))]
-        if let Some(components) = self.dead_entity_components.borrow().get(&entity) {
-            let loc = self.dead_entity_locations.borrow()[&entity];
-            panic!(
-                "Getting `{}` from despawned entity (despawned at {loc})\nComponents at despawn time: {components}",
-                type_name::<C>(),
-            );
-        }
         let set = self.sparse_sets.get_mut::<C>()?;
         RefMut::filter_map(set, |set| set.get_mut(entity)).ok()
     }
