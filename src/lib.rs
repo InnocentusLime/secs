@@ -4,10 +4,7 @@
 //! to fill your world with life.
 
 mod query;
-mod scheduler;
 mod sparse_set;
 mod world;
 
-pub use scheduler::Scheduler;
-pub use scheduler::SysId;
 pub use world::{Entity, World};

@@ -158,14 +158,7 @@ async fn main() {
         ));
     }
 
-    let scheduler = secs::Scheduler::default();
-
     let mut game_state = GameState { paused: false };
-
-    scheduler.register(move_system);
-    scheduler.register(collision_system);
-
-    scheduler.register(render_system);
 
     loop {
         clear_background(SKYBLUE);
@@ -174,8 +167,9 @@ async fn main() {
             game_state.paused = !game_state.paused;
         }
 
-        // run all parallel and sequential systems
-        scheduler.run(&world, &mut game_state);
+        move_system(&world, &mut game_state);
+        collision_system(&world, &mut game_state);
+        render_system(&world, &mut game_state);
 
         next_frame().await;
     }

@@ -12,7 +12,6 @@ use std::{
 
 use crate::{
     query::Query,
-    scheduler::{Scheduler, SysId},
     sparse_set::SparseSets,
 };
 
@@ -64,7 +63,6 @@ pub struct World {
     /// so whenever a system finishes
     despawning: RefCell<Vec<Entity>>,
     pub(crate) sparse_sets: SparseSets,
-    scheduler: Scheduler<'static, ()>,
 }
 
 impl World {
@@ -268,23 +266,6 @@ impl World {
                 set.remove(entity);
             }
         }
-    }
-
-    /// Add a system that will run after all systems that were added before it.
-    pub fn add_system(&self, mut system: impl FnMut(&World) + 'static) -> SysId {
-        self.scheduler.register(move |world, _| system(world))
-    }
-
-    /// Remove a previously inserted system.
-    pub fn remove_system(&self, system: SysId) {
-        self.scheduler.deregister(system);
-    }
-
-    /// Run all systems once.
-    ///
-    /// Note: it is not recommended to run this from within a system, as that will usually result in infinite recursion.
-    pub fn run_systems(&self) {
-        self.scheduler.run(self, &mut ());
     }
 }
 pub trait AttachComponents {
