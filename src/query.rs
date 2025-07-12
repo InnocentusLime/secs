@@ -35,41 +35,41 @@ impl<T> Always for &mut T {}
     note = "only references and `Option`s of references can be components"
 )]
 pub trait SparseSetGetter {
-    type Short<'b>;
-    type Iter<'c>;
-    fn get_set(world: &World) -> Option<Self::Iter<'_>>;
-    fn get_entity<'b>(iter: &'b mut Self::Iter<'_>, entity: Entity) -> Option<Self::Short<'b>>;
-    fn iter<'b>(iter: &'b mut Self::Iter<'_>) -> impl Iterator<Item = (Entity, Self::Short<'b>)>
+    type Val<'b>;
+    type StorageRef<'c>;
+    fn get_set(world: &World) -> Option<Self::StorageRef<'_>>;
+    fn get_entity<'b>(iter: &'b mut Self::StorageRef<'_>, entity: Entity) -> Option<Self::Val<'b>>;
+    fn iter<'b>(iter: &'b mut Self::StorageRef<'_>) -> impl Iterator<Item = (Entity, Self::Val<'b>)>
     where
         Self: Always;
 }
 
 impl<C: 'static> SparseSetGetter for &C {
-    type Short<'b> = &'b C;
-    type Iter<'c> = Ref<'c, SparseSet<C>>;
+    type Val<'b> = &'b C;
+    type StorageRef<'c> = Ref<'c, SparseSet<C>>;
     #[track_caller]
-    fn get_set(world: &World) -> Option<Self::Iter<'_>> {
+    fn get_set(world: &World) -> Option<Self::StorageRef<'_>> {
         world.sparse_sets.get()
     }
-    fn get_entity<'b>(iter: &'b mut Self::Iter<'_>, entity: Entity) -> Option<Self::Short<'b>> {
+    fn get_entity<'b>(iter: &'b mut Self::StorageRef<'_>, entity: Entity) -> Option<Self::Val<'b>> {
         iter.get(entity)
     }
-    fn iter<'b>(iter: &'b mut Self::Iter<'_>) -> impl Iterator<Item = (Entity, Self::Short<'b>)> {
+    fn iter<'b>(iter: &'b mut Self::StorageRef<'_>) -> impl Iterator<Item = (Entity, Self::Val<'b>)> {
         iter.iter()
     }
 }
 
 impl<T: SparseSetGetter> SparseSetGetter for Option<T> {
-    type Short<'b> = Option<T::Short<'b>>;
-    type Iter<'c> = T::Iter<'c>;
+    type Val<'b> = Option<T::Val<'b>>;
+    type StorageRef<'c> = T::StorageRef<'c>;
     #[track_caller]
-    fn get_set(world: &World) -> Option<Self::Iter<'_>> {
+    fn get_set(world: &World) -> Option<Self::StorageRef<'_>> {
         T::get_set(world)
     }
-    fn get_entity<'b>(iter: &'b mut Self::Iter<'_>, entity: Entity) -> Option<Self::Short<'b>> {
+    fn get_entity<'b>(iter: &'b mut Self::StorageRef<'_>, entity: Entity) -> Option<Self::Val<'b>> {
         Some(T::get_entity(iter, entity))
     }
-    fn iter<'b>(_iter: &'b mut Self::Iter<'_>) -> impl Iterator<Item = (Entity, Self::Short<'b>)>
+    fn iter<'b>(_iter: &'b mut Self::StorageRef<'_>) -> impl Iterator<Item = (Entity, Self::Val<'b>)>
     where
         Self: Always,
     {
@@ -78,16 +78,16 @@ impl<T: SparseSetGetter> SparseSetGetter for Option<T> {
 }
 
 impl<C: 'static> SparseSetGetter for &mut C {
-    type Short<'b> = &'b mut C;
-    type Iter<'c> = RefMut<'c, SparseSet<C>>;
+    type Val<'b> = &'b mut C;
+    type StorageRef<'c> = RefMut<'c, SparseSet<C>>;
     #[track_caller]
-    fn get_set(world: &World) -> Option<Self::Iter<'_>> {
+    fn get_set(world: &World) -> Option<Self::StorageRef<'_>> {
         world.sparse_sets.get_mut()
     }
-    fn get_entity<'b>(iter: &'b mut Self::Iter<'_>, entity: Entity) -> Option<Self::Short<'b>> {
+    fn get_entity<'b>(iter: &'b mut Self::StorageRef<'_>, entity: Entity) -> Option<Self::Val<'b>> {
         iter.get_mut(entity)
     }
-    fn iter<'b>(iter: &'b mut Self::Iter<'_>) -> impl Iterator<Item = (Entity, Self::Short<'b>)> {
+    fn iter<'b>(iter: &'b mut Self::StorageRef<'_>) -> impl Iterator<Item = (Entity, Self::Val<'b>)> {
         iter.iter_mut()
     }
 }
@@ -96,7 +96,7 @@ macro_rules! impl_query {
     ($($T:ident),*) => {
         impl<A: SparseSetGetter + Always, $($T: SparseSetGetter,)* Z> Query<(A, $($T,)*)> for Z
         where
-            Z: FnMut(Entity, A::Short<'_>, $($T::Short<'_>,)*),
+            Z: FnMut(Entity, A::Val<'_>, $($T::Val<'_>,)*),
             Z: FnMut(Entity, A, $($T,)*),
         {
             #[track_caller]
