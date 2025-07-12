@@ -1,6 +1,6 @@
 use std::{
     any::Any,
-    cell::{Cell, Ref, RefCell, RefMut},
+    cell::{Cell, Ref, RefMut},
     num::NonZeroU64,
 };
 
@@ -48,10 +48,6 @@ impl Default for EntityCounter {
 #[derive(Default)]
 pub struct World {
     entities: EntityCounter,
-    /// Entities that are being despawned.
-    /// As we cannot mutate the sparse sets to remove all components while queries are running, we instead do
-    /// so whenever a system finishes
-    despawning: RefCell<Vec<Entity>>,
     pub(crate) sparse_sets: SparseSets,
 }
 
@@ -81,19 +77,7 @@ impl World {
     /// Destroy an entity and all its components. Future attempts to use this entity in any way will panic.
     #[track_caller]
     pub fn despawn(&self, entity: Entity) {
-        self.despawning.borrow_mut().push(entity);
-    }
-
-    /// Ensure all despawned entities actually got removed
-    #[track_caller]
-    pub fn flush_despawned(&self) {
-        for entity in self.despawning.borrow_mut().drain(..) {
-            self.detach_all(entity);
-        }
-    }
-
-    pub(crate) fn is_despawning(&self, entity: Entity) -> bool {
-        self.despawning.borrow().contains(&entity)
+        self.detach_all(entity);
     }
 
     /// Attach multiple components to an entity at once.
