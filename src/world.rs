@@ -91,12 +91,6 @@ impl World {
         self.sparse_sets.remove(entity)
     }
 
-    /// Detach all components from an entity and drop them.
-    /// If you want to extract specific components, call [Self::detach] first.
-    pub fn debug_components(&self, entity: Entity) -> String {
-        self.sparse_sets.debug(entity)
-    }
-
     /// Detach all components of a specific type from all entities and drop them.
     ///
     /// This method removes all components of type `C` from every entity in the world.

@@ -72,16 +72,10 @@ impl<C> SparseSet<C> {
 }
 
 trait Set: Any {
-    fn debug(&mut self, entity: Entity) -> Option<&'static str>;
-
     fn remove(&mut self, entity: Entity);
 }
 
 impl<C: Any> Set for SparseSet<C> {
-    fn debug(&mut self, entity: Entity) -> Option<&'static str> {
-        self.get(entity).map(|_| type_name::<C>())
-    }
-
     fn remove(&mut self, entity: Entity) {
         self.remove(entity);
     }
@@ -103,24 +97,6 @@ impl SparseSets {
         let old = self.set_access.get_mut().insert(set_idx, n);
         
         assert_eq!(old, None);
-    }
-
-    pub fn debug(&self, entity: Entity) -> String {
-        let mut component = String::new();
-
-        for set in self.sets.iter() {
-            let Ok(mut guard) = set.try_borrow_mut() else {
-                panic!(
-                    "Tried to access component mutably, but it is already being read or written to",
-                )
-            };
-
-            if let Some(c) = guard.debug(entity) {
-                component.push_str(c);
-                component.push_str(", ");
-            }
-        }
-        component
     }
 
     pub fn remove(&mut self, entity: Entity) {
