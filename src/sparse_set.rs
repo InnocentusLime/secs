@@ -105,7 +105,6 @@ impl SparseSets {
         );
     }
 
-    #[track_caller]
     pub fn debug(&self, entity: Entity) -> String {
         let mut component = String::new();
 
@@ -124,7 +123,6 @@ impl SparseSets {
         component
     }
 
-    #[track_caller]
     pub fn remove(&self, entity: Entity) {
         for set in self.sets.iter() {
             let Ok(mut guard) = set.try_borrow_mut() else {
@@ -137,7 +135,6 @@ impl SparseSets {
         }
     }
 
-    #[track_caller]
     pub fn get<C: 'static>(&self) -> Option<Ref<SparseSet<C>>> {
         let i = *self.set_access.borrow().get(&TypeId::of::<C>())?;
         let set = &self.sets.get(i).unwrap();
@@ -152,7 +149,6 @@ impl SparseSets {
         }))
     }
 
-    #[track_caller]
     pub fn get_mut<C: 'static>(&self) -> Option<RefMut<SparseSet<C>>> {
         let i = *self.set_access.borrow().get(&TypeId::of::<C>())?;
         let set = &self.sets.get(i).unwrap();

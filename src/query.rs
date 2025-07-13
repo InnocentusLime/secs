@@ -11,7 +11,6 @@ use crate::{
     note = "only tuples with 1 or up to 5 elements can be used as queries"
 )]
 pub trait Query<ARGS>: Sized {
-    #[track_caller]
     fn get_components(world: &World, f: Self);
 }
 
@@ -47,7 +46,6 @@ pub trait SparseSetGetter {
 impl<C: 'static> SparseSetGetter for &C {
     type Val<'b> = &'b C;
     type StorageRef<'c> = Ref<'c, SparseSet<C>>;
-    #[track_caller]
     fn get_set(world: &World) -> Option<Self::StorageRef<'_>> {
         world.sparse_sets.get()
     }
@@ -62,7 +60,6 @@ impl<C: 'static> SparseSetGetter for &C {
 impl<T: SparseSetGetter> SparseSetGetter for Option<T> {
     type Val<'b> = Option<T::Val<'b>>;
     type StorageRef<'c> = T::StorageRef<'c>;
-    #[track_caller]
     fn get_set(world: &World) -> Option<Self::StorageRef<'_>> {
         T::get_set(world)
     }
@@ -80,7 +77,6 @@ impl<T: SparseSetGetter> SparseSetGetter for Option<T> {
 impl<C: 'static> SparseSetGetter for &mut C {
     type Val<'b> = &'b mut C;
     type StorageRef<'c> = RefMut<'c, SparseSet<C>>;
-    #[track_caller]
     fn get_set(world: &World) -> Option<Self::StorageRef<'_>> {
         world.sparse_sets.get_mut()
     }
@@ -99,7 +95,6 @@ macro_rules! impl_query {
             Z: FnMut(Entity, A::Val<'_>, $($T::Val<'_>,)*),
             Z: FnMut(Entity, A, $($T,)*),
         {
-            #[track_caller]
             fn get_components(world: &World, mut f: Z) {
                 #[allow(non_snake_case)]
                 if let (Some(mut a), $(Some(mut $T),)*) = (A::get_set(world), $($T::get_set(world),)*) {

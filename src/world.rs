@@ -49,7 +49,6 @@ pub struct World {
 }
 
 impl World {
-    #[track_caller]
     fn insert<C: Any>(&self, entity: Entity, component: C) {
         if let Some(mut set) = self.sparse_sets.get_mut::<C>() {
             set.insert(entity, component);
@@ -66,25 +65,21 @@ impl World {
     /// world.spawn(("player", 42));
     /// world.spawn(("animal", 12, 5.3));
     /// ```
-    #[track_caller]
     pub fn spawn<C: AttachComponents>(&self, components: C) -> Entity {
         components.attach_to(self, self.entities.inc())
     }
 
     /// Destroy an entity and all its components. Future attempts to use this entity in any way will panic.
-    #[track_caller]
     pub fn despawn(&self, entity: Entity) {
         self.detach_all(entity);
     }
 
     /// Attach multiple components to an entity at once.
-    #[track_caller]
     pub fn attach<C: AttachComponents>(&self, entity: Entity, components: C) {
         components.attach_to(self, entity);
     }
 
     /// Detach a component and return it if the entity had that component.
-    #[track_caller]
     pub fn detach<C: 'static>(&self, entity: Entity) -> Option<C> {
         let mut set = self.sparse_sets.get_mut::<C>()?;
         set.remove(entity)
@@ -92,14 +87,12 @@ impl World {
 
     /// Detach all components from an entity and drop them.
     /// If you want to extract specific components, call [Self::detach] first.
-    #[track_caller]
     pub fn detach_all(&self, entity: Entity) {
         self.sparse_sets.remove(entity)
     }
 
     /// Detach all components from an entity and drop them.
     /// If you want to extract specific components, call [Self::detach] first.
-    #[track_caller]
     pub fn debug_components(&self, entity: Entity) -> String {
         self.sparse_sets.debug(entity)
     }
@@ -136,7 +129,6 @@ impl World {
     /// # Panics
     ///
     /// This will panic if the component is already used mutably either by a [Self::query] or [Self::get_mut].
-    #[track_caller]
     pub fn get<C: 'static>(&self, entity: Entity) -> Option<Ref<C>> {
         let set = self.sparse_sets.get::<C>()?;
         Ref::filter_map(set, |set| set.get(entity)).ok()
@@ -147,7 +139,6 @@ impl World {
     /// # Panics
     ///
     /// This will panic if the component is already used either by a [Self::query], [Self::get_mut], or [Self::get].
-    #[track_caller]
     pub fn get_mut<C: 'static>(&self, entity: Entity) -> Option<RefMut<C>> {
         let set = self.sparse_sets.get_mut::<C>()?;
         RefMut::filter_map(set, |set| set.get_mut(entity)).ok()
@@ -166,7 +157,6 @@ impl World {
     ///     println!("{s}: {u}");
     /// });
     /// ```
-    #[track_caller]
     pub fn query<Q: Query<T>, T>(&self, f: Q) {
         Q::get_components(self, f)
     }
@@ -197,7 +187,6 @@ pub trait AttachComponents {
 macro_rules! impl_attach_components {
     ($($T:ident),+) => {
         impl<$($T: Any),+> AttachComponents for ($($T,)+) {
-            #[track_caller]
             fn attach_to(self, world: &World, entity: Entity) -> Entity {
                 #[allow(non_snake_case)]
                 let ($($T,)+) = self;
