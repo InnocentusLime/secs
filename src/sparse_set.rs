@@ -95,7 +95,7 @@ impl SparseSets {
 
         self.sets.push(component);
         let old = self.set_access.get_mut().insert(set_idx, n);
-        
+
         assert_eq!(old, None);
     }
 
