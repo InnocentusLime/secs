@@ -38,8 +38,8 @@ pub trait SparseSetGetter {
     type Val<'b>;
     type StorageRef<'c>;
     fn get_set(world: &World) -> Option<Self::StorageRef<'_>>;
-    fn get_entity<'b>(iter: &'b mut Self::StorageRef<'_>, entity: Entity) -> Option<Self::Val<'b>>;
-    fn iter<'b>(iter: &'b mut Self::StorageRef<'_>) -> impl Iterator<Item = (Entity, Self::Val<'b>)>
+    fn get_entity<'b>(storage: &'b mut Self::StorageRef<'_>, entity: Entity) -> Option<Self::Val<'b>>;
+    fn iter<'b>(storage: &'b mut Self::StorageRef<'_>) -> impl Iterator<Item = (Entity, Self::Val<'b>)>
     where
         Self: Always;
 }
@@ -66,10 +66,10 @@ impl<T: SparseSetGetter> SparseSetGetter for Option<T> {
     fn get_set(world: &World) -> Option<Self::StorageRef<'_>> {
         T::get_set(world)
     }
-    fn get_entity<'b>(iter: &'b mut Self::StorageRef<'_>, entity: Entity) -> Option<Self::Val<'b>> {
-        Some(T::get_entity(iter, entity))
+    fn get_entity<'b>(storage: &'b mut Self::StorageRef<'_>, entity: Entity) -> Option<Self::Val<'b>> {
+        Some(T::get_entity(storage, entity))
     }
-    fn iter<'b>(_iter: &'b mut Self::StorageRef<'_>) -> impl Iterator<Item = (Entity, Self::Val<'b>)>
+    fn iter<'b>(_storage: &'b mut Self::StorageRef<'_>) -> impl Iterator<Item = (Entity, Self::Val<'b>)>
     where
         Self: Always,
     {
@@ -84,11 +84,11 @@ impl<C: 'static> SparseSetGetter for &mut C {
     fn get_set(world: &World) -> Option<Self::StorageRef<'_>> {
         world.sparse_sets.get_mut()
     }
-    fn get_entity<'b>(iter: &'b mut Self::StorageRef<'_>, entity: Entity) -> Option<Self::Val<'b>> {
-        iter.get_mut(entity)
+    fn get_entity<'b>(storage: &'b mut Self::StorageRef<'_>, entity: Entity) -> Option<Self::Val<'b>> {
+        storage.get_mut(entity)
     }
-    fn iter<'b>(iter: &'b mut Self::StorageRef<'_>) -> impl Iterator<Item = (Entity, Self::Val<'b>)> {
-        iter.iter_mut()
+    fn iter<'b>(storage: &'b mut Self::StorageRef<'_>) -> impl Iterator<Item = (Entity, Self::Val<'b>)> {
+        storage.iter_mut()
     }
 }
 
