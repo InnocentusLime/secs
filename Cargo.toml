@@ -10,12 +10,6 @@ keywords = ["entity", "ecs", "component", "game", "gamedev"]
 categories = ["game-engines", "game-development"]
 
 [dependencies]
-elsa = "1.11.0"
 
 [dev-dependencies]
 macroquad = "0.4.14"
-ui_test = "0.29.1"
-
-[[test]]
-name = "ui"
-harness = false

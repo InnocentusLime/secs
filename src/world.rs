@@ -49,7 +49,7 @@ pub struct World {
 }
 
 impl World {
-    fn insert<C: Any>(&self, entity: Entity, component: C) {
+    fn insert<C: Any>(&mut self, entity: Entity, component: C) {
         if let Some(mut set) = self.sparse_sets.get_mut::<C>() {
             set.insert(entity, component);
         } else {
@@ -61,33 +61,33 @@ impl World {
     ///
     /// ```rust
     /// # use secs::World;
-    /// # let world = World::default();
+    /// # let mut world = World::default();
     /// world.spawn(("player", 42));
     /// world.spawn(("animal", 12, 5.3));
     /// ```
-    pub fn spawn<C: AttachComponents>(&self, components: C) -> Entity {
+    pub fn spawn<C: AttachComponents>(&mut self, components: C) -> Entity {
         components.attach_to(self, self.entities.inc())
     }
 
     /// Destroy an entity and all its components. Future attempts to use this entity in any way will panic.
-    pub fn despawn(&self, entity: Entity) {
+    pub fn despawn(&mut self, entity: Entity) {
         self.detach_all(entity);
     }
 
     /// Attach multiple components to an entity at once.
-    pub fn attach<C: AttachComponents>(&self, entity: Entity, components: C) {
+    pub fn attach<C: AttachComponents>(&mut self, entity: Entity, components: C) {
         components.attach_to(self, entity);
     }
 
     /// Detach a component and return it if the entity had that component.
-    pub fn detach<C: 'static>(&self, entity: Entity) -> Option<C> {
+    pub fn detach<C: 'static>(&mut self, entity: Entity) -> Option<C> {
         let mut set = self.sparse_sets.get_mut::<C>()?;
         set.remove(entity)
     }
 
     /// Detach all components from an entity and drop them.
     /// If you want to extract specific components, call [Self::detach] first.
-    pub fn detach_all(&self, entity: Entity) {
+    pub fn detach_all(&mut self, entity: Entity) {
         self.sparse_sets.remove(entity)
     }
 
@@ -106,12 +106,12 @@ impl World {
     ///
     /// ```rust
     /// # use secs::World;
-    /// # let world = World::default();
+    /// # let mut world = World::default();
     /// # let entity = world.spawn(("player", 42));
     /// world.detach_any::<i32>();
     /// assert!(!world.is_attached::<i32>(entity));
     /// ```
-    pub fn detach_any<C: 'static>(&self) {
+    pub fn detach_any<C: 'static>(&mut self) {
         if let Some(mut set) = self.sparse_sets.get_mut::<C>() {
             set.clear();
         }
@@ -181,13 +181,13 @@ impl World {
     }
 }
 pub trait AttachComponents {
-    fn attach_to(self, world: &World, entity: Entity) -> Entity;
+    fn attach_to(self, world: &mut World, entity: Entity) -> Entity;
 }
 
 macro_rules! impl_attach_components {
     ($($T:ident),+) => {
         impl<$($T: Any),+> AttachComponents for ($($T,)+) {
-            fn attach_to(self, world: &World, entity: Entity) -> Entity {
+            fn attach_to(self, world: &mut World, entity: Entity) -> Entity {
                 #[allow(non_snake_case)]
                 let ($($T,)+) = self;
                 $(world.insert(entity, $T);)+

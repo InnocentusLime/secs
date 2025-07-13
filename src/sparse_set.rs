@@ -1,4 +1,3 @@
-use elsa::FrozenVec;
 use std::{
     any::{Any, TypeId, type_name},
     cell::{Ref, RefCell, RefMut},
@@ -91,18 +90,19 @@ impl<C: Any> Set for SparseSet<C> {
 #[derive(Default)]
 pub struct SparseSets {
     set_access: RefCell<HashMap<TypeId, usize>>,
-    sets: FrozenVec<Box<RefCell<dyn Set>>>,
+    sets: Vec<Box<RefCell<dyn Set>>>,
 }
 
 impl SparseSets {
-    pub fn insert<C: Any>(&self, entity: Entity, component: C) {
+    pub fn insert<C: Any>(&mut self, entity: Entity, component: C) {
         let component = Box::new(RefCell::new(SparseSet::new(entity, component)));
         let n = self.sets.len();
+        let set_idx = TypeId::of::<C>();
+
         self.sets.push(component);
-        assert_eq!(
-            self.set_access.borrow_mut().insert(TypeId::of::<C>(), n),
-            None
-        );
+        let old = self.set_access.get_mut().insert(set_idx, n);
+        
+        assert_eq!(old, None);
     }
 
     pub fn debug(&self, entity: Entity) -> String {
@@ -123,16 +123,11 @@ impl SparseSets {
         component
     }
 
-    pub fn remove(&self, entity: Entity) {
-        for set in self.sets.iter() {
-            let Ok(mut guard) = set.try_borrow_mut() else {
-                panic!(
-                    "Tried to access component mutably, but it is already being read or written to",
-                )
-            };
-
-            guard.remove(entity);
-        }
+    pub fn remove(&mut self, entity: Entity) {
+        self.sets
+            .iter_mut()
+            .map(|x| x.get_mut())
+            .for_each(|set| set.remove(entity));
     }
 
     pub fn get<C: 'static>(&self) -> Option<Ref<SparseSet<C>>> {
