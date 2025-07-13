@@ -49,6 +49,10 @@ pub struct World {
 }
 
 impl World {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
     fn insert<C: Any>(&mut self, entity: Entity, component: C) {
         if let Some(mut set) = self.sparse_sets.get_mut::<C>() {
             set.insert(entity, component);
@@ -61,7 +65,7 @@ impl World {
     ///
     /// ```rust
     /// # use secs::World;
-    /// # let mut world = World::default();
+    /// # let mut world = World::new();
     /// world.spawn(("player", 42));
     /// world.spawn(("animal", 12, 5.3));
     /// ```
@@ -100,7 +104,7 @@ impl World {
     ///
     /// ```rust
     /// # use secs::World;
-    /// # let mut world = World::default();
+    /// # let mut world = World::new();
     /// # let entity = world.spawn(("player", 42));
     /// world.detach_any::<i32>();
     /// assert!(!world.is_attached::<i32>(entity));
